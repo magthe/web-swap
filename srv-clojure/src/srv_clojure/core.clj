@@ -3,6 +3,7 @@
             [ring.middleware.json :refer :all]
             [compojure.handler :as handler]
             [ring.util.response :refer [response]]
+            [ring.middleware.cors :as cors]
             [compojure.route :as route]
             [srv-clojure.token :as token]
             [srv-clojure.groups :as groups]))
@@ -83,6 +84,8 @@
 
 (defroutes app
   (-> app-routes
+      (cors/wrap-cors :access-control-allow-origin [#".*"]
+                      :access-control-allow-methods [:get :put :post :delete])
       wrap-log-request
       wrap-json-response
       wrap-kwjson-body
