@@ -4,7 +4,7 @@ import Swap
 import Task
 
 app = StartApp.start
-      { init = (Swap.Start, Effects.none)
+      { init = (Swap.initialModel, Effects.none)
       , update = Swap.update
       , view = Swap.view
       , inputs = []
