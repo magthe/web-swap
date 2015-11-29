@@ -7,10 +7,12 @@ import Http
 import Json.Decode as Json
 import Task
 import Debug
+import Signal
 
 -- Model
 type alias Model = (List String, List String, List String)
 
+initialModel : Model
 initialModel = (["foo", "bar", "baz"], ["toto", "titi", "tata"], ["wibble", "wobble", "wubble"])
 
 -- Update
@@ -34,7 +36,6 @@ view address (left, right, swappers) =
          , makeList right
          , h1 [] [text "Swappers"]
          , makeList swappers
-         , button [onClick address RequestGroups] [text "get groups"]
          ]
 
 makeList : List String -> Html
@@ -48,6 +49,7 @@ getGroups = Http.get decodeGroups groupUrl
             |> Task.map (Maybe.withDefault NoAction)
             |> Effects.task
 
+groupUrl : String
 groupUrl = Http.url "http://localhost:3000/swap/groups" []
 
 decodeGroups : Json.Decoder Action
