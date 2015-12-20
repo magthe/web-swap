@@ -2,6 +2,7 @@ module Swap where
 
 import Effects exposing (Effects)
 import Html exposing (..)
+import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http
 import Json.Decode as Json
@@ -12,39 +13,72 @@ import Signal
 import Either exposing (..)
 
 -- Model
-type alias Model = (List String, List String, List String, Either (String, String) String)
+type alias UserPwd = {user : String, pwd : String}
+type alias UserPwdToken = {user : String, pwd : String, token : String}
+type alias Model = (List String, List String, List String, Either UserPwd UserPwdToken)
 
 initialModel : Model
-initialModel = (["foo", "bar", "baz"], ["toto", "titi", "tata"], ["wibble", "wobble", "wubble"], Left ("", ""))
+initialModel = (["foo", "bar", "baz"], ["toto", "titi", "tata"], ["wibble", "wobble", "wubble"], Left {user = "", pwd = ""})
 
 -- Update
 type Action = NoAction
-            | Auth
+            | UpdateUsername String
+            | UpdatePassword String
+            | Authenticate
             | RequestGroups
             | NewGroup (List String) (List String) (List String)
             | NewToken String
 
 update : Action -> Model -> (Model, Effects Action)
 update action m =
-  case action of
-    NoAction -> Debug.log "NoAction" (m, Effects.none)
-    Auth -> Debug.log "Auth" (m, postAuth "Viveka" "magnus")
-    RequestGroups -> (m, getGroups)
-    -- RequestGroups -> (m, Effects.none)
-    NewGroup l r s -> ((l, r, s, Left ("", "")), Effects.none)
-    NewToken _ -> Debug.log "NewToken" (m, Effects.none)
+  let (l, r, s, upt) = m
+  in
+    case action of
+      NoAction -> Debug.log "NoAction" (m, Effects.none)
+      UpdateUsername user -> elim (\ v -> ((l, r, s, Left {v | user = user}), Effects.none))
+                             (\ _ -> (m, Effects.none))
+                             upt
+      UpdatePassword pwd -> elim (\ v -> ((l, r, s, Left {v | pwd = pwd}), Effects.none))
+                            (\ _ -> (m, Effects.none))
+                            upt
+      Authenticate -> elim (\ v -> (m, postAuth v.user v.pwd))
+                      (\ _ -> (m, Effects.none))
+                      upt
+      RequestGroups -> (m, getGroups)
+      NewGroup l' r' s' -> ((l', r', s', upt), Effects.none)
+      NewToken t -> elim (\ {user, pwd} -> ((l, r, s, Right {user = user, pwd = pwd, token = t}), Effects.none))
+                    (\ v -> ((l, r, s, Right {v | token = t}), Effects.none))
+                    upt
 
 -- View
 view : Signal.Address Action -> Model -> Html
-view address (left, right, swappers, _) =
+view address (left, right, swappers, upt) =
   div [] [ h1 [] [text "Lefters"]
          , makeList left
          , h1 [] [text "Righters"]
          , makeList right
          , h1 [] [text "Swappers"]
          , makeList swappers
-         , button [onClick address Auth] [text "Post"]
+         , case upt of
+             Left unpwd -> makeLoginView address unpwd
+             Right token -> makeSwapView address token
          ]
+
+makeLoginView : Signal.Address Action -> UserPwd -> Html
+makeLoginView address {user, pwd} =
+  div [] [ input [ placeholder "User name"
+                 , value user
+                 , on "input" targetValue (\ s -> Signal.message address (UpdateUsername s))
+                 ] []
+         , input [ placeholder "Password"
+                 , value pwd
+                 , on "input" targetValue (\ s -> Signal.message address (UpdatePassword s))
+                 ] []
+         , button [onClick address Authenticate] [text "Log in"]
+         ]
+
+makeSwapView : Signal.Address Action -> UserPwdToken -> Html
+makeSwapView address token = text "TBD: makeSwapView"
 
 makeList : List String -> Html
 makeList xs = ol [] (List.map (\ i -> li [] [text i]) xs)
