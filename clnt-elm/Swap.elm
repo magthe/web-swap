@@ -9,12 +9,13 @@ import Json.Encode as JE
 import Task
 import Debug
 import Signal
+import Either exposing (..)
 
 -- Model
-type alias Model = (List String, List String, List String)
+type alias Model = (List String, List String, List String, Either (String, String) String)
 
 initialModel : Model
-initialModel = (["foo", "bar", "baz"], ["toto", "titi", "tata"], ["wibble", "wobble", "wubble"])
+initialModel = (["foo", "bar", "baz"], ["toto", "titi", "tata"], ["wibble", "wobble", "wubble"], Left ("", ""))
 
 -- Update
 type Action = NoAction
@@ -30,12 +31,12 @@ update action m =
     Auth -> Debug.log "Auth" (m, postAuth "Viveka" "magnus")
     RequestGroups -> (m, getGroups)
     -- RequestGroups -> (m, Effects.none)
-    NewGroup l r s -> ((l, r, s), Effects.none)
+    NewGroup l r s -> ((l, r, s, Left ("", "")), Effects.none)
     NewToken _ -> Debug.log "NewToken" (m, Effects.none)
 
 -- View
 view : Signal.Address Action -> Model -> Html
-view address (left, right, swappers) =
+view address (left, right, swappers, _) =
   div [] [ h1 [] [text "Lefters"]
          , makeList left
          , h1 [] [text "Righters"]
