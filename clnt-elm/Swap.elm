@@ -20,6 +20,12 @@ type alias Model = (List String, List String, List String, Either UserPwd UserPw
 initialModel : Model
 initialModel = (["foo", "bar", "baz"], ["toto", "titi", "tata"], ["wibble", "wobble", "wubble"], Left {user = "", pwd = ""})
 
+isInSwapList : Model -> Bool
+isInSwapList (_, _, s, upt) =
+  case upt of
+    Left _ -> False
+    Right ut -> List.member ut.user s
+
 -- Update
 type Action = NoAction
             | UpdateUsername String
@@ -28,10 +34,12 @@ type Action = NoAction
             | RequestGroups
             | NewGroup (List String) (List String) (List String)
             | NewToken String
+            | Swap
 
 update : Action -> Model -> (Model, Effects Action)
 update action m =
-  let (l, r, s, upt) = m
+  let
+    (l, r, s, upt) = m
   in
     case action of
       NoAction -> Debug.log "NoAction" (m, Effects.none)
@@ -49,20 +57,26 @@ update action m =
       NewToken t -> elim (\ {user, pwd} -> ((l, r, s, Right {user = user, pwd = pwd, token = t}), Effects.none))
                     (\ v -> ((l, r, s, Right {v | token = t}), Effects.none))
                     upt
+      Swap -> case upt of
+                Left _ -> Debug.log "Swap without token!" (m, Effects.none)
+                Right {token} -> Debug.log "Swap with token!" (m, swap token)
 
 -- View
 view : Signal.Address Action -> Model -> Html
-view address (left, right, swappers, upt) =
-  div [] [ h1 [] [text "Lefters"]
-         , makeList left
-         , h1 [] [text "Righters"]
-         , makeList right
-         , h1 [] [text "Swappers"]
-         , makeList swappers
-         , case upt of
-             Left unpwd -> makeLoginView address unpwd
-             Right token -> makeSwapView address token
-         ]
+view address m =
+  let
+    (left, right, swappers, upt) = m
+  in
+    div [] [ h1 [] [text "Lefters"]
+           , makeList left
+           , h1 [] [text "Righters"]
+           , makeList right
+           , h1 [] [text "Swappers"]
+           , makeList swappers
+           , case upt of
+               Left unpwd -> makeLoginView address unpwd
+               Right _ -> makeSwapView address m
+           ]
 
 makeLoginView : Signal.Address Action -> UserPwd -> Html
 makeLoginView address {user, pwd} =
@@ -77,8 +91,14 @@ makeLoginView address {user, pwd} =
          , button [onClick address Authenticate] [text "Log in"]
          ]
 
-makeSwapView : Signal.Address Action -> UserPwdToken -> Html
-makeSwapView address token = text "TBD: makeSwapView"
+makeSwapView : Signal.Address Action -> Model -> Html
+makeSwapView address m =
+  let
+    msgOrButton = if isInSwapList m
+                  then div [] [ text "You are signed up to swap"]
+                  else div [] [ button [onClick address Swap] [text "I want to swap"]]
+  in
+    div [] [msgOrButton]
 
 makeList : List String -> Html
 makeList xs = ol [] (List.map (\ i -> li [] [text i]) xs)
@@ -118,6 +138,22 @@ authBody n p =
 
 decodeToken : Json.Decoder Action
 decodeToken = Json.object1 NewToken (Json.at ["token"] Json.string)
+
+swap : String -> Effects Action
+swap token = jsonPost decodeGroups swapUrl (swapBody token)
+             |> Task.map (Debug.log "swap")
+             |> Task.toMaybe
+             |> Task.map (Maybe.withDefault NoAction)
+             |> Effects.task
+
+swapUrl : String
+swapUrl = Http.url "http://localhost:3000/swap/swap" []
+
+swapBody : String -> Http.Body
+swapBody tok =
+  let
+    o = JE.object [("token", JE.string tok)]
+  in Http.string (JE.encode 0 o)
 
 jsonGet : Json.Decoder value -> String -> Task.Task Http.Error value
 jsonGet decoder url =
