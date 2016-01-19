@@ -35,6 +35,7 @@ type Action = NoAction
             | NewGroup (List String) (List String) (List String)
             | NewToken String
             | Swap
+            | LogOut
 
 update : Action -> Model -> (Model, Effects Action)
 update action m =
@@ -60,6 +61,7 @@ update action m =
       Swap -> case upt of
                 Left _ -> Debug.log "Swap without token!" (m, Effects.none)
                 Right {token} -> Debug.log "Swap with token!" (m, swap token)
+      LogOut -> ((l, r, s, Left {user = "", pwd = ""}), Effects.none)
 
 -- View
 view : Signal.Address Action -> Model -> Html
@@ -98,7 +100,9 @@ makeSwapView address m =
                   then div [] [ text "You are signed up to swap"]
                   else div [] [ button [onClick address Swap] [text "I want to swap"]]
   in
-    div [] [msgOrButton]
+    div [] [ button [onClick address LogOut] [text "Log out"]
+           , msgOrButton
+           ]
 
 makeList : List String -> Html
 makeList xs = ol [] (List.map (\ i -> li [] [text i]) xs)
