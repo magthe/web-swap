@@ -18,7 +18,7 @@ type alias UserPwdToken = {user : String, pwd : String, token : String}
 type alias Model = (List String, List String, List String, Either UserPwd UserPwdToken)
 
 initialModel : Model
-initialModel = (["foo", "bar", "baz"], ["toto", "titi", "tata"], ["wibble", "wobble", "wubble"], Left {user = "", pwd = ""})
+initialModel = ([] , [] , [] , Left {user = "", pwd = ""})
 
 isInSwapList : Model -> Bool
 isInSwapList (_, _, s, upt) =

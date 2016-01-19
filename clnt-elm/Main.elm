@@ -7,7 +7,7 @@ import Task
 import Time
 
 app = StartApp.start
-      { init = (Swap.initialModel, Effects.none)
+      { init = (Swap.initialModel, Swap.getGroups)
       , update = Swap.update
       , view = Swap.view
       , inputs = [timedGetGroups]
