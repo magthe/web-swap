@@ -1,0 +1,44 @@
+A playground for trying out various technologies for writing a web (HTTP+JSON) client and server.
+
+** API
+
+*** Get the current groups
+
+#+BEGIN_SRC restclient
+GET http://localhost:3000/swap/groups
+#+END_SRC
+
+#+BEGIN_SRC json
+  { "groups": { "left": ["Viveka"],
+                "right": ["Sarah"],
+                "swappers": ["Viveka"]
+              }}
+#+END_SRC
+*** Authentication
+
+    The usernames and passwords are hardcoded into the servers, e.g. in ~core.clj~ for the Clojure server.
+
+#+BEGIN_SRC restclient
+POST http://localhost:3000/swap/auth
+Content-Type: application/json
+
+{ "name": "Viveka", "pword": "magnus" }
+#+END_SRC
+
+*** Renewing authentication token
+
+#+BEGIN_SRC restclient
+POST http://localhost:3000/swap/renew-token
+Content-Type: application/json
+
+{ "token": "l7kDrAvoUaQG1iytlK/hAAAr7A4bkXth7T2TIp0sCOc=" }
+#+END_SRC
+
+*** Request a swap
+
+#+BEGIN_SRC restclient
+POST http://localhost:3000/swap/swap
+Content-Type: application/json
+
+{ "token": "l7kDrAvoUaQG1iytlK/hAAAr7A4bkXth7T2TIp0sCOc=" }
+#+END_SRC
