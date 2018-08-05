@@ -25,9 +25,7 @@
         time (tc/from-long (Long/valueOf time-str))
         exp-time (t/plus time (t/minutes minutes))
         cur-time (t/now)]
-    (prn n)
-    (prn cur-time)
-    (prn exp-time)
+    (println (str n " : " time " - " cur-time " - " exp-time))
     (t/after? exp-time cur-time)))
 
 (defn verify-token [token]
